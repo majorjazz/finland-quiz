@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finland Quiz Challenge</title>
+    <style>
+        :root {
+            --primary-color: #002f6c;
+            --secondary-color: #ffffff;
+            --accent-color: #d2e4f0;
+            --correct-color: #28a745;
+            --incorrect-color: #dc3545;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--secondary-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1, h2 {
+            margin: 0;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        /* Screens */
+        #start-container, #quiz-container, #results-container, #review-container, #leaderboard-container {
+            display: none; /* Hidden by default */
+        }
+
+        #start-container.active, #quiz-container.active, #results-container.active, #review-container.active, #leaderboard-container.active {
+            display: block;
+        }
+
+        /* Start Screen */
+        .input-group {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        #player-name {
+            padding: 10px;
+            width: 60%;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        /* Quiz Screen */
+        #timer {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #question-counter {
+            text-align: right;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        #question-text {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--accent-color);
+            border: 2px solid transparent;
+            border-radius: 5px;
+            text-align: left;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .option-btn:hover {
+            background-color: #b9d7ea;
+        }
+
+        .option-btn.selected {
+            border-color: var(--primary-color);
+            background-color: #b9d7ea;
+            font-weight: bold;
+        }
+
+        /* Review Screen */
+        .review-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 5px solid;
+        }
+        .review-question {
+            font-weight: bold;
+        }
+        .review-answer {
+            margin-top: 5px;
+        }
+        .correct {
+            border-left-color: var(--correct-color);
+            background-color: #e9f7eb;
+        }
+        .incorrect {
+            border-left-color: var(--incorrect-color);
+            background-color: #fcebec;
+        }
+
+        /* Leaderboard Screen */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--accent-color);
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 20px;
+            text-align: center;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #001f5a;
+            transform: translateY(-2px);
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .btn-nav {
+             float: right;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Finland Quiz Challenge</h1>
+        </div>
+        <div class="content">
+
+            <div id="start-container" class="active">
+                <h2>Welcome!</h2>
+                <p>Test your knowledge about Finland. You have 2000 seconds to answer 100 questions.</p>
+                <div class="input-group">
+                    <input type="text" id="player-name" placeholder="Enter your name">
+                </div>
+                <div class="btn-container">
+                    <button class="btn" onclick="startQuiz()">Start Quiz</button>
+                </div>
+            </div>
+
+            <div id="quiz-container">
+                <div id="timer"></div>
+                <div id="question-counter"></div>
+                <h2 id="question-text"></h2>
+                <div class="options-grid" id="options-container"></div>
+                <button class="btn btn-nav" id="next-btn" onclick="nextQuestion()">Next Question</button>
+            </div>
+
+            <div id="results-container">
+                <h2>Quiz Complete!</h2>
+                <p id="score-text"></p>
+                <div class="btn-container">
+                    <button class="btn" onclick="showReview()">Review Answers</button>
+                    <button class="btn" onclick="showLeaderboard()">View Leaderboard</button>
+                </div>
+            </div>
+
+            <div id="review-container">
+                <h2>Answer Review</h2>
+                <div id="review-content"></div>
+                <div class="btn-container">
+                    <button class="btn" onclick="showLeaderboard()">Next: Leaderboard</button>
+                </div>
+            </div>
+
+            <div id="leaderboard-container">
+                <h2>Leaderboard</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                            <th>Date & Time (IST)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body"></tbody>
+                </table>
+                 <div class="btn-container">
+                    <button class="btn" onclick="restartQuiz()">Play Again</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            [cite_start]{ question: "What is the capital city of Finland? [cite: 2]", options: ["Stockholm", "Helsinki", "Oslo", "Copenhagen"], correctAnswer: "Helsinki" },
+            [cite_start]{ question: "Which company, originally from Finland, was a global leader in mobile phones in the early 2000s? [cite: 3, 4]", options: ["Samsung", "Apple", "Nokia", "Ericsson"], correctAnswer: "Nokia" },
+            [cite_start]{ question: "Which of the following is Finland's official currency? [cite: 5]", options: ["Krona", "Euro", "Dollar", "Pound"], correctAnswer: "Euro" },
+            [cite_start]{ question: "Finland is known as the \"Land of a Thousand...\" what? [cite: 6]", options: ["Mountains", "Lakes", "Forests", "Islands"], correctAnswer: "Lakes" },
+            [cite_start]{ question: "What is the Finnish word for 'Hello'? [cite: 7]", options: ["Hei", "Moi", "Terve", "All of the above"], correctAnswer: "All of the above" },
+            [cite_start]{ question: "What is the traditional Finnish steam bath called? [cite: 8]", options: ["Onsen", "Hammam", "Sauna", "Banya"], correctAnswer: "Sauna" },
+            [cite_start]{ question: "Which famous game, featuring slingshot-launched birds, was created by a Finnish company? [cite: 9, 10]", options: ["Candy Crush", "Angry Birds", "Minecraft", "Fortnite"], correctAnswer: "Angry Birds" },
+            [cite_start]{ question: "What is the national animal of Finland? [cite: 11]", options: ["Wolf", "Reindeer", "Brown Bear", "Moose"], correctAnswer: "Brown Bear" },
+            [cite_start]{ question: "The Finnish city of Rovaniemi is famous for being the official hometown of which festive figure? [cite: 12, 13]", options: ["The Easter Bunny", "The Tooth Fairy", "Santa Claus", "Jack Frost"], correctAnswer: "Santa Claus" },
+            [cite_start]{ question: "Which sea lies to the west of Finland, separating it from Sweden? [cite: 14, 15]", options: ["North Sea", "Baltic Sea", "Barents Sea", "Caspian Sea"], correctAnswer: "Baltic Sea" },
+            [cite_start]{ question: "In which year did Finland gain its independence? [cite: 16]", options: ["1905", "1917", "1945", "1991"], correctAnswer: "1917" },
+            [cite_start]{ question: "What is the main color of the Finnish flag? [cite: 17]", options: ["Blue and White", "Red and White", "Blue and Yellow", "Green and White"], correctAnswer: "Blue and White" },
+            [cite_start]{ question: "Which festival celebrates the midnight sun in Finland? [cite: 18]", options: ["Vappu", "Midsummer (Juhannus)", "Independence Day", "Kalevala Day"], correctAnswer: "Midsummer (Juhannus)" },
+            [cite_start]{ question: "What is the name of Finland's indigenous people? [cite: 19]", options: ["Inuit", "Sami", "Aborigines", "Lapps"], correctAnswer: "Sami" },
+            [cite_start]{ question: "Which of these is a popular winter sport in Finland? [cite: 20]", options: ["Soccer", "Cricket", "Ice Hockey", "Basketball"], correctAnswer: "Ice Hockey" },
+            [cite_start]{ question: "What is the Finnish term for the \"right to roam,\" which allows access to most natural areas? [cite: 21, 22]", options: ["Jokamiehenoikeus", "Metsän oikeus", "Vaelluslupa", "Vapaakulkija"], correctAnswer: "Jokamiehenoikeus" },
+            [cite_start]{ question: "What is the name of the Finnish epic poem that is considered the national epic? [cite: 23, 24]", options: ["The Odyssey", "Beowulf", "The Kalevala", "The Mahabharata"], correctAnswer: "The Kalevala" },
+            [cite_start]{ question: "Which iconic Finnish brand is known for its bold and colorful textile designs? [cite: 25, 26]", options: ["IKEA", "Marimekko", "H&M", "LEGO"], correctAnswer: "Marimekko" },
+            [cite_start]{ question: "What is the official name of Finland in Finnish? [cite: 27]", options: ["Suomi", "Finlandia", "Finnland", "Eest"], correctAnswer: "Suomi" },
+            [cite_start]{ question: "Which neighboring country does Finland share its longest border with? [cite: 28]", options: ["Sweden", "Norway", "Russia", "Estonia"], correctAnswer: "Russia" },
+            [cite_start]{ question: "What is the national flower of Finland? [cite: 29]", options: ["Rose", "Bluebell", "Lily of the Valley", "Tulip"], correctAnswer: "Lily of the Valley" },
+            [cite_start]{ question: "Which Finnish innovation is a box given to all expectant mothers with baby supplies? [cite: 30, 31]", options: ["Baby Box", "Baby Kit", "Finnish Cradle", "Maternity Pack"], correctAnswer: "Maternity Pack" },
+            [cite_start]{ question: "What is the name of the largest lake in Finland? [cite: 32, 33]", options: ["Lake Inari", "Lake Päijänne", "Lake Saimaa", "Lake Oulujärvi"], correctAnswer: "Lake Saimaa" },
+            [cite_start]{ question: "What is the Finnish word for \"Thank you\"? [cite: 34]", options: ["Kiitos", "Ole hyvä", "Anteeksi", "Moi"], correctAnswer: "Kiitos" },
+            [cite_start]{ question: "Who was the Indian leader who visited Finland in 1983, strengthening bilateral relations? [cite: 35, 36]", options: ["Jawaharlal Nehru", "Indira Gandhi", "Rajiv Gandhi", "Atal Bihari Vajpayee"], correctAnswer: "Indira Gandhi" },
+            [cite_start]{ question: "Which Finnish composer is considered the greatest of his country and is known for his work \"Finlandia\"? [cite: 38, 39]", options: ["Jean Sibelius", "Einojuhani Rautavaara", "Kaija Saariaho", "Arvo Pärt"], correctAnswer: "Jean Sibelius" },
+            [cite_start]{ question: "What is a key feature of the Finnish education system's curriculum? [cite: 40, 41]", options: ["Emphasis on standardized testing", "A focus on competition among students", "A lack of homework and a play-based approach in early years", "Longer school days and more classroom hours"], correctAnswer: "A lack of homework and a play-based approach in early years" },
+            [cite_start]{ question: "Which UNESCO World Heritage Site, a sea fortress, is located in Helsinki? [cite: 42, 43]", options: ["Old Rauma", "Suomenlinna", "Kvarken Archipelago", "Verla Groundwood Mill"], correctAnswer: "Suomenlinna" },
+            [cite_start]{ question: "The Finnish tradition of 'Kalsarikännit' literally translates to what? [cite: 44]", options: ["\"The art of staying home\"", "\"Drinking at home in your underwear\"", "\"Midsummer party\"", "\"Winter swimming\""], correctAnswer: "\"Drinking at home in your underwear\"" },
+            [cite_start]{ question: "What is the name of the Finnish phenomenon where a person feels lonely but enjoys their solitude? [cite: 45, 46]", options: ["Sisu", "Kalsarikännit", "Kaamos", "Yksinäisyys"], correctAnswer: "Yksinäisyys" },
+            [cite_start]{ question: "What is the term for the Finnish concept of \"guts,\" \"resilience,\" and \"determination\"? [cite: 47, 48]", options: ["Kaamos", "Sisu", "Kalsarikännit", "Lumikko"], correctAnswer: "Sisu" },
+            [cite_start]{ question: "What is the name of the traditional Finnish sausage grilled over a fire, often eaten in the summer? [cite: 49, 50]", options: ["Makkara", "Karjalanpiirakka", "Salmiakki", "Pulla"], correctAnswer: "Makkara" },
+            [cite_start]{ question: "Which Finnish company is a global leader in elevator and escalator manufacturing? [cite: 51]", options: ["Nokia", "Wärtsilä", "Kone", "UPM"], correctAnswer: "Kone" },
+            [cite_start]{ question: "The Finnish language belongs to which language family? [cite: 52]", options: ["Germanic", "Slavic", "Uralic", "Baltic"], correctAnswer: "Uralic" },
+            [cite_start]{ question: "Finland is a member of which international organizations? [cite: 53]", options: ["The European Union (EU) and NATO", "The European Union (EU) and the Warsaw Pact", "The United Nations (UN) and the Non-Aligned Movement", "The Commonwealth of Nations and the Arctic Council"], correctAnswer: "The European Union (EU) and NATO" },
+            [cite_start]{ question: "The Finnish national epic, the Kalevala, was compiled by which linguist and physician? [cite: 54, 55]", options: ["Elias Lönnrot", "Jean Sibelius", "Akseli Gallen-Kallela", "Mika Waltari"], correctAnswer: "Elias Lönnrot" },
+            [cite_start]{ question: "What is the name of the region in northern Finland where the Sami people primarily live? [cite: 56, 57]", options: ["Lapland", "Karelia", "Pohjanmaa", "Uusimaa"], correctAnswer: "Lapland" },
+            [cite_start]{ question: "Which Finnish runner, nicknamed the \"Flying Finn,\" won nine Olympic gold medals in the 1920s? [cite: 58, 59]", options: ["Lasse Virén", "Paavo Nurmi", "Hannes Kolehmainen", "Matti Nykänen"], correctAnswer: "Paavo Nurmi" },
+            [cite_start]{ question: "What is the phenomenon of the polar night in northern Finland called in Finnish? [cite: 60, 61]", options: ["Revontulet", "Kaamos", "Juhannus", "Sisu"], correctAnswer: "Kaamos" },
+            [cite_start]{ question: "What is the name of the Finnish sweet licorice that is very popular in the country? [cite: 62, 63]", options: ["Salmiakki", "Lakritsi", "Pulla", "Piparkakku"], correctAnswer: "Salmiakki" },
+            [cite_start]{ question: "Which of the following is a famous Finnish architectural style known for its clean lines and minimalist design? [cite: 64, 65]", options: ["Art Nouveau", "Functionalism", "Baroque", "Gothic Revival"], correctAnswer: "Functionalism" },
+            [cite_start]{ question: "What is the traditional Finnish rye bread called? [cite: 66]", options: ["Ruisleipä", "Limppu", "Karjalanpiirakka", "Korvapuusti"], correctAnswer: "Ruisleipä" },
+            [cite_start]{ question: "What is the name of the Finnish rock band that won the Eurovision Song Contest in 2006 with the song \"Hard Rock Hallelujah\"? [cite: 67, 68]", options: ["The Rasmus", "Lordi", "Nightwish", "HIM"], correctAnswer: "Lordi" },
+            [cite_start]{ question: "The Finnish company Wärtsilä is a global leader in which industry? [cite: 69, 70]", options: ["Mobile phones", "Marine and energy", "Paper manufacturing", "Textiles"], correctAnswer: "Marine and energy" },
+            [cite_start]{ question: "Who is the current President of Finland as of 2024? [cite: 71, 72]", options: ["Sauli Niinistö", "Alexander Stubb", "Tarja Halonen", "Urho Kekkonen"], correctAnswer: "Alexander Stubb" },
+            [cite_start]{ question: "Which Finnish artist is known for his paintings and frescoes depicting scenes from the Kalevala? [cite: 73, 74]", options: ["Akseli Gallen-Kallela", "Albert Edelfelt", "Alvar Aalto", "Helene Schjerfbeck"], correctAnswer: "Akseli Gallen-Kallela" },
+            [cite_start]{ question: "What is the name of the large archipelago off the coast of Finland and Sweden that is a UNESCO World Heritage Site? [cite: 75, 76]", options: ["Kvarken Archipelago", "Åland Islands", "Turku Archipelago", "Helsinki Archipelago"], correctAnswer: "Kvarken Archipelago" },
+            [cite_start]{ question: "What is the name of the Finnish forest spirit or deity, often associated with hunting and nature? [cite: 77, 78]", options: ["Tapio", "Ukko", "Väinämöinen", "Lemminkäinen"], correctAnswer: "Tapio" },
+            [cite_start]{ question: "What is the name of the traditional Finnish Christmas pastry, often filled with plum jam? [cite: 79, 80]", options: ["Joulutorttu", "Piparkakku", "Pulla", "Korvapuusti"], correctAnswer: "Joulutorttu" },
+            [cite_start]{ question: "What is the name of the world-renowned Finnish rally driver who won four World Rally Championship titles? [cite: 81, 82]", options: ["Kimi Räikkönen", "Mika Häkkinen", "Juha Kankkunen", "Tommi Mäkinen"], correctAnswer: "Tommi Mäkinen" },
+            [cite_start]{ question: "The \"Winter War\" was fought between Finland and which country from 1939 to 1940? [cite: 84, 85]", options: ["Germany", "Soviet Union", "Sweden", "Norway"], correctAnswer: "Soviet Union" },
+            [cite_start]{ question: "Which Finnish-American architect is known for his work on the Gateway Arch in St. Louis? [cite: 86, 87]", options: ["Eero Saarinen", "Alvar Aalto", "Eliel Saarinen", "Viljo Revell"], correctAnswer: "Eero Saarinen" },
+            [cite_start]{ question: "Which Finnish philosopher and architect is known for his essay \"The Human Being and Technology\"? [cite: 88, 89]", options: ["Eero Saarinen", "Alvar Aalto", "Viljo Revell", "Martti Ahtisaari"], correctAnswer: "Alvar Aalto" },
+            [cite_start]{ question: "What is the name of the Finnish delicacy, often served on a plate with meat and potatoes, made from fried battered fish? [cite: 90, 91]", options: ["Kalakukko", "Lihapulla", "Muikku", "Leipäjuusto"], correctAnswer: "Muikku" },
+            [cite_start]{ question: "The Finnish concept of \"Kaamos\" refers to what natural phenomenon? [cite: 92, 93]", options: ["The Midnight Sun", "The Polar Night", "The Aurora Borealis", "The changing of the seasons"], correctAnswer: "The Polar Night" },
+            [cite_start]{ question: "Which city served as the capital of Finland before Helsinki? [cite: 94]", options: ["Turku", "Tampere", "Oulu", "Lahti"], correctAnswer: "Turku" },
+            [cite_start]{ question: "What is the name of the Finnish political system? [cite: 95]", options: ["Constitutional monarchy", "Presidential republic", "Parliamentary republic", "Unitary state"], correctAnswer: "Parliamentary republic" },
+            [cite_start]{ question: "The first country in the world to grant women full political rights (the right to vote and to stand for election) was: [cite: 96]", options: ["Finland", "New Zealand", "Australia", "United States"], correctAnswer: "Finland" },
+            [cite_start]{ question: "Which Finnish writer won the Nobel Prize in Literature in 1939? [cite: 97, 98]", options: ["Eino Leino", "Frans Eemil Sillanpää", "Mika Waltari", "Arto Paasilinna"], correctAnswer: "Frans Eemil Sillanpää" },
+            [cite_start]{ question: "What is the name of the Finnish sport that combines cross-country skiing and rifle shooting? [cite: 99, 100]", options: ["Biathlon", "Ski jumping", "Nordic combined", "Cross-country skiing"], correctAnswer: "Biathlon" },
+            [cite_start]{ question: "What is the Finnish word for the traditional, handmade boat built from a single piece of wood? [cite: 101, 102]", options: ["Järvenvene", "Vene", "Ruuhi", "Soutuvene"], correctAnswer: "Ruuhi" },
+            [cite_start]{ question: "Which Finnish company is a global leader in the paper and forestry industries? [cite: 103, 104]", options: ["Stora Enso", "Kone", "Nokia", "Neste"], correctAnswer: "Stora Enso" },
+            [cite_start]{ question: "Which Finnish folk music instrument, a type of zither, is considered a national symbol? [cite: 105, 106]", options: ["Kantele", "Jouhikko", "Näppäri", "Säkkipilli"], correctAnswer: "Kantele" },
+            [cite_start]{ question: "What is the name of the former Finnish Prime Minister who was the youngest female head of government in the world when she took office in 2019? [cite: 107, 108]", options: ["Sanna Marin", "Mari Kiviniemi", "Anneli Jäätteenmäki", "Katri Kulmuni"], correctAnswer: "Sanna Marin" },
+            [cite_start]{ question: "What is the name of the Finnish holiday on May 1st, a traditional spring festival? [cite: 109, 110]", options: ["Juhannus", "Vappu", "Pääsiäinen", "Itsenäisyyspäivä"], correctAnswer: "Vappu" },
+            [cite_start]{ question: "What is the name of the Finnish innovation that is a type of electronic payment system and digital wallet? [cite: 111, 112]", options: ["Klarna", "Swish", "MobilePay", "Siirto"], correctAnswer: "Siirto" },
+            [cite_start]{ question: "Which of the following is a UNESCO World Heritage Site in Finland, consisting of a church and an old cemetery? [cite: 113, 114]", options: ["Old Rauma", "Petäjävesi Old Church", "Suomenlinna", "Kvarken Archipelago"], correctAnswer: "Petäjävesi Old Church" },
+            [cite_start]{ question: "What is the term for the Finnish phenomenon of ice swimming in the winter? [cite: 115, 116]", options: ["Avantouinti", "Kylmäuinti", "Talviuinti", "Jääuinti"], correctAnswer: "Avantouinti" },
+            [cite_start]{ question: "What is the name of the famous Finnish rally driver who won the World Rally Championship four times with different manufacturers? [cite: 117, 118]", options: ["Tommi Mäkinen", "Juha Kankkunen", "Hannu Mikkola", "Marcus Grönholm"], correctAnswer: "Juha Kankkunen" },
+            [cite_start]{ question: "Which of the following is a famous Finnish delicacy made from blood, flour, and spices? [cite: 119, 120]", options: ["Kalakukko", "Mustamakkara", "Karjalanpaisti", "Lihapulla"], correctAnswer: "Mustamakkara" },
+            [cite_start]{ question: "The Finnish company Supercell is a global leader in which industry? [cite: 121, 122]", options: ["Mobile phones", "Paper and forestry", "Mobile gaming", "Elevators"], correctAnswer: "Mobile gaming" },
+            [cite_start]{ question: "Which Finnish architect and designer is considered a pioneer of modern architecture in Finland and is known for his work on the Finlandia Hall? [cite: 123, 124]", options: ["Eliel Saarinen", "Alvar Aalto", "Viljo Revell", "Eero Saarinen"], correctAnswer: "Alvar Aalto" },
+            [cite_start]{ question: "What is the name of the Finnish national monument, a bronze statue of a mermaid, located in Helsinki? [cite: 125, 126]", options: ["Havis Amanda", "Suomen Neito", "Kalevala", "Sisko"], correctAnswer: "Havis Amanda" },
+            [cite_start]{ question: "What is the name of the Finnish national park, a UNESCO World Heritage Site, known for its unique land uplift phenomenon? [cite: 127, 128]", options: ["Koli National Park", "Oulanka National Park", "Kvarken Archipelago", "Pallas-Yllästunturi National Park"], correctAnswer: "Kvarken Archipelago" },
+            [cite_start]{ question: "Which Finnish scientist is credited with inventing the sauna? [cite: 129, 130]", options: ["It is unknown, as the sauna has ancient origins.", "Ahti Ihalainen", "Martti Ahtisaari", "Jean Sibelius"], correctAnswer: "It is unknown, as the sauna has ancient origins." },
+            [cite_start]{ question: "The Treaty of Hamina, signed in 1809, transferred Finland from Sweden to which empire? [cite: 132, 133]", options: ["The British Empire", "The Russian Empire", "The Holy Roman Empire", "The Ottoman Empire"], correctAnswer: "The Russian Empire" },
+            [cite_start]{ question: "What is the name of the Finnish epic poem that tells the story of the Sampo, a magical artifact? [cite: 134, 135]", options: ["The Kalevala", "The Kanteletar", "The Kivi", "The Lönnrot"], correctAnswer: "The Kalevala" },
+            [cite_start]{ question: "What is the name of the Finnish political system that combines a parliamentary republic with a semi-presidential system? [cite: 136, 137]", options: ["Unitary state", "Dual-executive system", "Bicameral system", "Unicameral system"], correctAnswer: "Dual-executive system" },
+            [cite_start]{ question: "What is the name of the Finnish scientist who developed the Linux operating system kernel? [cite: 138, 139]", options: ["Linus Torvalds", "Jarkko Oikarinen", "Jukka Korpela", "Vesa-Matti Loiri"], correctAnswer: "Linus Torvalds" },
+            [cite_start]{ question: "What is the name of the Finnish holiday that celebrates the country's independence? [cite: 140, 141]", options: ["Juhannus", "Vappu", "Itsenäisyyspäivä", "Kalevala Day"], correctAnswer: "Itsenäisyyspäivä" },
+            [cite_start]{ question: "Which Finnish diplomat won the Nobel Peace Prize in 2008 for his work in resolving international conflicts? [cite: 142, 143]", options: ["Urho Kekkonen", "Martti Ahtisaari", "Paavo Lipponen", "Sauli Niinistö"], correctAnswer: "Martti Ahtisaari" },
+            [cite_start]{ question: "What is the name of the Finnish delicacy, a type of baked cheese, often served with cloudberry jam? [cite: 144, 145]", options: ["Leipäjuusto", "Mustamakkara", "Karjalanpiirakka", "Kalakukko"], correctAnswer: "Leipäjuusto" },
+            [cite_start]{ question: "Which Finnish composer is known for his experimental and avant-garde music, including his opera \"The Last Temptations\"? [cite: 146, 147]", options: ["Jean Sibelius", "Einojuhani Rautavaara", "Kaija Saariaho", "Magnus Lindberg"], correctAnswer: "Einojuhani Rautavaara" },
+            [cite_start]{ question: "What is the name of the Finnish holiday on February 28th, which celebrates Finnish culture and the Kalevala? [cite: 148, 149]", options: ["Kalevala Day", "Sisu Day", "Vappu", "Juhannus"], correctAnswer: "Kalevala Day" },
+            [cite_start]{ question: "What is the name of the Finnish city that is known as the \"Christmas capital\"? [cite: 150, 151]", options: ["Oulu", "Tampere", "Rovaniemi", "Turku"], correctAnswer: "Rovaniemi" },
+            [cite_start]{ question: "The Finnish company F-Secure is a global leader in which industry? [cite: 152, 153]", options: ["Mobile phones", "Cybersecurity", "Paper and forestry", "Elevators"], correctAnswer: "Cybersecurity" },
+            [cite_start]{ question: "What is the name of the Finnish writer who is considered one of the greatest poets of the Finnish language? [cite: 154, 155]", options: ["Aleksis Kivi", "Eino Leino", "Mika Waltari", "Arto Paasilinna"], correctAnswer: "Eino Leino" },
+            [cite_start]{ question: "What is the name of the Finnish delicacy, a type of pie filled with fish and pork? [cite: 156, 157]", options: ["Kalakukko", "Karjalanpiirakka", "Lihapulla", "Muikku"], correctAnswer: "Kalakukko" },
+            [cite_start]{ question: "Which of the following is a UNESCO World Heritage Site in Finland, consisting of a wooden town? [cite: 158, 159]", options: ["Suomenlinna", "Old Rauma", "Kvarken Archipelago", "Verla Groundwood Mill"], correctAnswer: "Old Rauma" },
+            [cite_start]{ question: "The Finnish company Neste is a global leader in which industry? [cite: 160, 161]", options: ["Mobile phones", "Renewable fuels", "Paper manufacturing", "Textiles"], correctAnswer: "Renewable fuels" },
+            [cite_start]{ question: "What is the name of the Finnish political party that has historically been the largest in the country? [cite: 162, 163]", options: ["Centre Party", "Social Democratic Party", "National Coalition Party", "True Finns"], correctAnswer: "Social Democratic Party" },
+            [cite_start]{ question: "Which Finnish painter is known for her portraits and landscapes, often in a realist style? [cite: 164, 165]", options: ["Helene Schjerfbeck", "Akseli Gallen-Kallela", "Albert Edelfelt", "Tove Jansson"], correctAnswer: "Albert Edelfelt" },
+            [cite_start]{ question: "What is the name of the Finnish artist and author who created the Moomins? [cite: 166, 167]", options: ["Tove Jansson", "Akseli Gallen-Kallela", "Albert Edelfelt", "Helene Schjerfbeck"], correctAnswer: "Tove Jansson" },
+            [cite_start]{ question: "The Finnish company UPM is a global leader in which industry? [cite: 168, 169]", options: ["Mobile phones", "Paper and forestry", "Mobile gaming", "Elevators"], correctAnswer: "Paper and forestry" },
+            [cite_start]{ question: "What is the name of the Finnish delicacy, a type of pastry filled with rice porridge? [cite: 170, 171]", options: ["Karjalanpiirakka", "Kalakukko", "Lihapulla", "Pulla"], correctAnswer: "Karjalanpiirakka" },
+            [cite_start]{ question: "Which Finnish-American architect is known for his work on the Helsinki Olympic Stadium? [cite: 172, 173]", options: ["Eero Saarinen", "Alvar Aalto", "Viljo Revell", "Eliel Saarinen"], correctAnswer: "Viljo Revell" },
+            [cite_start]{ question: "What is the name of the Finnish national park, a UNESCO World Heritage Site, known for its old-growth forests and rock art? [cite: 174, 175]", options: ["Koli National Park", "Oulanka National Park", "Pallas-Yllästunturi National Park", "Verla Groundwood Mill"], correctAnswer: "Verla Groundwood Mill" },
+            [cite_start]{ question: "What is the name of the Finnish term for the \"Aurora Borealis\" or \"Northern Lights\"? [cite: 176, 177]", options: ["Revontulet", "Kaamos", "Juhannus", "Sisu"], correctAnswer: "Revontulet" },
+            [cite_start]{ question: "The Finnish company Linux is a global leader in which industry? [cite: 178, 179]", options: ["Operating systems", "Mobile phones", "Paper and forestry", "Elevators"], correctAnswer: "Operating systems" },
+            [cite_start]{ question: "The Finnish-American architect and designer Eliel Saarinen is known for his work on which American landmark? [cite: 180, 181]", options: ["The Gateway Arch in St. Louis", "The Helsinki Central railway station", "Cranbrook Educational Community", "The Helsinki Olympic Stadium"], correctAnswer: "Cranbrook Educational Community" }
+        ];
+
+        // Quiz State
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 2000;
+        let playerName = '';
+        let userAnswers = new Array(questions.length).fill(null);
+
+        // DOM Elements
+        const startContainer = document.getElementById('start-container');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const reviewContainer = document.getElementById('review-container');
+        const leaderboardContainer = document.getElementById('leaderboard-container');
+        const allContainers = [startContainer, quizContainer, resultsContainer, reviewContainer, leaderboardContainer];
+
+        const playerNameInput = document.getElementById('player-name');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextBtn = document.getElementById('next-btn');
+        const timerEl = document.getElementById('timer');
+        const questionCounterEl = document.getElementById('question-counter');
+
+        function showScreen(screenToShow) {
+            allContainers.forEach(container => container.classList.remove('active'));
+            screenToShow.classList.add('active');
+        }
+
+        function startQuiz() {
+            playerName = playerNameInput.value.trim();
+            if (playerName === "") {
+                alert("Please enter your name to start the quiz.");
+                return;
+            }
+            showScreen(quizContainer);
+            startTimer();
+            showQuestion();
+        }
+
+        function startTimer() {
+            timerEl.textContent = `Time Left: ${Math.floor(timeLeft / 60)}:${('0' + (timeLeft % 60)).slice(-2)}`;
+            timer = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = `Time Left: ${Math.floor(timeLeft / 60)}:${('0' + (timeLeft % 60)).slice(-2)}`;
+                if (timeLeft <= 0) {
+                    endQuiz();
+                }
+            }, 1000);
+        }
+
+        function showQuestion() {
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+
+            // Update question counter and text
+            questionCounterEl.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+            const currentQuestion = questions[currentQuestionIndex];
+            questionText.innerHTML = currentQuestion.question;
+
+            // Create option buttons
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.classList.add('option-btn');
+                button.addEventListener('click', () => selectAnswer(button, option));
+                optionsContainer.appendChild(button);
+            });
+
+            // Update Next button text
+            if (currentQuestionIndex === questions.length - 1) {
+                nextBtn.textContent = 'Finish Quiz';
+            } else {
+                nextBtn.textContent = 'Next Question';
+            }
+        }
+        
+        function selectAnswer(selectedButton, selectedOption) {
+            // Deselect any previously selected option
+            const options = optionsContainer.querySelectorAll('.option-btn');
+            options.forEach(btn => btn.classList.remove('selected'));
+
+            // Select the new option
+            selectedButton.classList.add('selected');
+            userAnswers[currentQuestionIndex] = selectedOption;
+        }
+
+        function nextQuestion() {
+            // Move to next question or end quiz
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        function endQuiz() {
+            clearInterval(timer);
+            calculateScore();
+            saveScoreToLeaderboard();
+            showResults();
+        }
+        
+        function calculateScore() {
+            score = 0;
+            questions.forEach((question, index) => {
+                if (userAnswers[index] === question.correctAnswer) {
+                    score++;
+                }
+            });
+        }
+
+        function saveScoreToLeaderboard() {
+            const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+            const newScoreEntry = {
+                name: playerName,
+                score: score,
+                timestamp: timestamp
+            };
+            
+            // Get existing leaderboard or initialize a new one
+            const leaderboard = JSON.parse(localStorage.getItem('quizLeaderboard')) || [];
+            
+            // Add new score and sort
+            leaderboard.push(newScoreEntry);
+            leaderboard.sort((a, b) => b.score - a.score);
+
+            // Save back to local storage
+            localStorage.setItem('quizLeaderboard', JSON.stringify(leaderboard));
+        }
+
+        function showResults() {
+            const scoreText = document.getElementById('score-text');
+            scoreText.textContent = `Your final score is ${score} out of ${questions.length}.`;
+            showScreen(resultsContainer);
+        }
+
+        function showReview() {
+            const reviewContent = document.getElementById('review-content');
+            reviewContent.innerHTML = ''; // Clear previous review
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                const isCorrect = userAnswer === q.correctAnswer;
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('review-item', isCorrect ? 'correct' : 'incorrect');
+
+                itemDiv.innerHTML = `
+                    <p class="review-question">${index + 1}. ${q.question}</p>
+                    <p class="review-answer">Your answer: ${userAnswer || 'Not Answered'}</p>
+                    ${!isCorrect ? `<p class="review-answer">Correct answer: ${q.correctAnswer}</p>` : ''}
+                `;
+                reviewContent.appendChild(itemDiv);
+            });
+            showScreen(reviewContainer);
+        }
+
+        function showLeaderboard() {
+            const leaderboardBody = document.getElementById('leaderboard-body');
+            leaderboardBody.innerHTML = ''; // Clear previous board
+
+            const leaderboard = JSON.parse(localStorage.getItem('quizLeaderboard')) || [];
+            
+            if (leaderboard.length === 0) {
+                 leaderboardBody.innerHTML = `<tr><td colspan="4">No scores yet. Be the first!</td></tr>`;
+            } else {
+                leaderboard.forEach((entry, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${entry.name}</td>
+                        <td>${entry.score} / ${questions.length}</td>
+                        <td>${entry.timestamp}</td>
+                    `;
+                    leaderboardBody.appendChild(row);
+                });
+            }
+            showScreen(leaderboardContainer);
+        }
+
+        function restartQuiz() {
+            // Reset state
+            currentQuestionIndex = 0;
+            score = 0;
+            timeLeft = 2000;
+            userAnswers = new Array(questions.length).fill(null);
+            playerNameInput.value = '';
+
+            // Go to start screen
+            showScreen(startContainer);
+        }
+
+    </script>
+</body>
+</html>
